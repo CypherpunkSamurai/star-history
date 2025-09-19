@@ -53,17 +53,16 @@
 				--glass-inner: rgba(255, 255, 255, 0.18);
 				--glass-shadow: rgba(0, 0, 0, 0.35);
 
-				--t-base: 320ms;
+				/* FIX: Standardized transition time */
+				--t-base: 250ms;
 
 				--backdrop-blur: 18px;
 				--saturation: 160%;
 			}
 
+			/* FIX: Universal transition rule for consistency */
 			* {
-				transition: color var(--t-base) ease,
-					background var(--t-base) ease,
-					border-color var(--t-base) ease,
-					box-shadow var(--t-base) ease, opacity var(--t-base) ease;
+				transition: all var(--t-base) ease-out;
 			}
 
 			html {
@@ -149,7 +148,6 @@
 					0 12px 60px var(--glass-shadow);
 				animation: pop-in 800ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 			}
-			/* FIX: Removed backdrop-filter from input to prevent blurry text/icons */
 			.glass-input {
 				width: 100%;
 				border-radius: 0.75rem;
@@ -158,7 +156,6 @@
 				background: rgba(0, 0, 0, 0.2);
 				border: 1px solid rgba(255, 255, 255, 0.08);
 				box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
-				transition: all 200ms ease-out;
 			}
 			.glass-input::placeholder {
 				color: var(--ink-dim);
@@ -186,7 +183,6 @@
 				background: rgba(0, 0, 0, 0.2);
 				border: 1px solid rgba(255, 255, 255, 0.08);
 				box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
-				transition: all 150ms cubic-bezier(0.2, 0.9, 0.2, 1.2);
 				backdrop-filter: blur(8px);
 				-webkit-backdrop-filter: blur(8px);
 			}
@@ -221,8 +217,6 @@
 				display: grid;
 				place-items: center;
 				cursor: pointer;
-				transition: transform 260ms cubic-bezier(0.2, 0.9, 0.2, 1.2),
-					box-shadow 260ms cubic-bezier(0.2, 0.9, 0.2, 1.2);
 				backdrop-filter: blur(10px);
 				-webkit-backdrop-filter: blur(10px);
 			}
@@ -232,23 +226,30 @@
 				filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 			}
 			.btn-icon:hover {
-				transform: translateY(-1px);
+				transform: translateY(-2px) scale(1.03);
 				border-color: color-mix(
 					in oklab,
 					var(--accent-weak) 65%,
 					var(--glass-border)
 				);
 				box-shadow: inset 0 1px 1px var(--glass-inner),
-					0 6px 18px
+					0 10px 22px
 						color-mix(
 							in oklab,
-							var(--accent) 20%,
+							var(--accent) 15%,
 							rgba(0, 0, 0, 0.45)
 						);
+			}
+			/* FIX: Specific hover rule for settings button to combine transforms */
+			#settings-btn:hover {
+				transform: translateY(-50%) translateY(-2px) scale(1.03);
 			}
 			.btn-icon:active {
 				transform: translateY(0) scale(0.96);
 				box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.28);
+			}
+			#settings-btn:active {
+				transform: translateY(-50%) scale(0.96);
 			}
 			.btn {
 				padding: 10px 20px;
@@ -280,12 +281,10 @@
 					transform: rotate(360deg);
 				}
 			}
-
 			.autocomplete-list {
 				opacity: 0;
 				transform: translateY(-8px);
 				pointer-events: none;
-				transition: opacity 200ms ease-out, transform 200ms ease-out;
 			}
 			.autocomplete-list.visible {
 				opacity: 1;
@@ -303,7 +302,6 @@
 			.autocomplete-active {
 				background-color: rgba(255, 255, 255, 0.05);
 			}
-
 			.modal-overlay {
 				position: fixed;
 				inset: 0;
@@ -313,14 +311,12 @@
 				background-color: rgba(0, 0, 0, 0.5);
 				backdrop-filter: blur(8px);
 				opacity: 0;
-				transition: opacity 200ms ease-in-out;
 				pointer-events: none;
 			}
 			.modal-overlay.visible {
 				opacity: 1;
 				pointer-events: auto;
 			}
-
 			.timeline-container {
 				position: relative;
 				padding-left: 2rem;
@@ -380,7 +376,7 @@
 			</h1>
 			<button
 				id="settings-btn"
-				class="btn-icon absolute top-1/2 right-0 transform -translate-y-1/2 z-20"
+				class="btn-icon absolute top-1/2 right-0 -translate-y-1/2 z-20"
 				title="Settings"
 			>
 				<i class="ph-bold ph-gear"></i>
@@ -409,7 +405,7 @@
 					class="absolute inset-y-0 right-0 pr-3 flex items-center hidden"
 				>
 					<button
-						class="btn-icon w-9 h-9 !shadow-none !bg-transparent"
+						class="btn-icon w-9 h-9 !shadow-none"
 						title="Clear search"
 					>
 						<i class="ph-bold ph-x-circle text-xl"></i>
@@ -473,7 +469,7 @@
 
 		<button
 			id="goToTopBtn"
-			class="btn-icon fixed bottom-8 right-8 z-30 opacity-0 invisible transform scale-95 transition-all duration-300"
+			class="btn-icon fixed bottom-8 right-8 z-30 opacity-0 invisible scale-95"
 			title="Go to top"
 		>
 			<i class="ph-bold ph-arrow-up"></i>
