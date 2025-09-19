@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Star History</title>
+
+		<!-- Custom Font: Poppins -->
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+
+		<!-- Icon Pack: Phosphor Icons -->
+		<script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+		<!-- Tailwind CSS via Play CDN -->
+		<script src="https://cdn.tailwindcss.com"></script>
+
+		<style>
+			:root {
+				--bg: #06171a;
+				--ink: #e9fcff;
+				--ink-dim: #a9d9de;
+				--accent: #19c9b0;
+				--accent-weak: #53e0cd;
+
+				--glass: rgba(255, 255, 255, 0.06);
+				--glass-strong: rgba(255, 255, 255, 0.1);
+				--glass-border: rgba(255, 255, 255, 0.12);
+				--glass-inner: rgba(255, 255, 255, 0.18);
+				--glass-shadow: rgba(0, 0, 0, 0.35);
+
+				--t-base: 320ms;
+
+				--backdrop-blur: 18px;
+				--saturation: 160%;
+			}
+
+			* {
+				transition: color var(--t-base) ease,
+					background var(--t-base) ease,
+					border-color var(--t-base) ease,
+					box-shadow var(--t-base) ease, opacity var(--t-base) ease;
+			}
+
+			html {
+				scroll-behavior: smooth;
+			}
+			body {
+				margin: 0;
+				color: var(--ink);
+				background-color: var(--bg);
+				font-family: "Poppins", sans-serif;
+				-webkit-font-smoothing: antialiased;
+				-moz-osx-font-smoothing: grayscale;
+			}
+			body::-webkit-scrollbar {
+				width: 8px;
+			}
+			body::-webkit-scrollbar-track {
+				background: var(--bg);
+			}
+			body::-webkit-scrollbar-thumb {
+				background-color: rgba(255, 255, 255, 0.1);
+				border-radius: 4px;
+			}
+
+			.orbs {
+				position: fixed;
+				inset: -20vmax;
+				z-index: -1;
+				filter: blur(70px) saturate(150%);
+				pointer-events: none;
+				opacity: 0.45;
+				mix-blend-mode: screen;
+			}
+			.orb {
+				position: absolute;
+				width: 60vmax;
+				height: 60vmax;
+				border-radius: 50%;
+				background: radial-gradient(
+					closest-side,
+					color-mix(in oklab, var(--accent) 55%, transparent),
+					transparent 70%
+				);
+				animation: float 12s ease-in-out infinite alternate;
+			}
+			@keyframes float {
+				from {
+					transform: translate3d(0, 0, 0);
+				}
+				to {
+					transform: translate3d(2vmax, -2vmax, 0);
+				}
+			}
+			@keyframes pop-in {
+				0% {
+					transform: translateY(20px) scale(0.98);
+					opacity: 0;
+				}
+				100% {
+					transform: translateY(0) scale(1);
+					opacity: 1;
+				}
+			}
+
+			/* Glass Components & Buttons */
+			.glass-card {
+				padding: 2rem;
+				border-radius: 1.5rem;
+				background: linear-gradient(
+							180deg,
+							rgba(255, 255, 255, 0.08),
+							rgba(255, 255, 255, 0) 22%
+						)
+						border-box,
+					linear-gradient(180deg, var(--glass), var(--glass-strong))
+						padding-box;
+				border: 1px solid var(--glass-border);
+				backdrop-filter: blur(var(--backdrop-blur))
+					saturate(var(--saturation));
+				-webkit-backdrop-filter: blur(var(--backdrop-blur))
+					saturate(var(--saturation));
+				box-shadow: inset 0 1px 1px var(--glass-inner),
+					0 12px 60px var(--glass-shadow);
+				animation: pop-in 800ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+			}
+			/* FIX: Removed backdrop-filter from input to prevent blurry text/icons */
+			.glass-input {
+				width: 100%;
+				border-radius: 0.75rem;
+				padding: 0.75rem 3rem;
+				color: var(--ink);
+				background: rgba(0, 0, 0, 0.2);
+				border: 1px solid rgba(255, 255, 255, 0.08);
+				box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+				transition: all 200ms ease-out;
+			}
+			.glass-input::placeholder {
+				color: var(--ink-dim);
+				opacity: 0.6;
+			}
+			.glass-input:focus {
+				outline: none;
+				background: rgba(0, 0, 0, 0.1);
+				border-color: color-mix(
+					in oklab,
+					var(--accent) 50%,
+					transparent
+				);
+				box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+					0 0 0 3px
+						color-mix(in oklab, var(--accent) 30%, transparent);
+			}
+			.glass-pill {
+				display: inline-flex;
+				align-items: center;
+				border-radius: 9999px;
+				padding: 4px 4px 4px 12px;
+				font-size: 0.875rem;
+				font-weight: 500;
+				background: rgba(0, 0, 0, 0.2);
+				border: 1px solid rgba(255, 255, 255, 0.08);
+				box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+				transition: all 150ms cubic-bezier(0.2, 0.9, 0.2, 1.2);
+				backdrop-filter: blur(8px);
+				-webkit-backdrop-filter: blur(8px);
+			}
+			.glass-pill:hover {
+				transform: translateY(-2px) scale(1.02);
+				background: rgba(0, 0, 0, 0.3);
+			}
+			.glass-pill .remove-pill {
+				width: 1.25rem;
+				height: 1.25rem;
+				display: grid;
+				place-items: center;
+				border-radius: 50%;
+				margin-left: 0.5rem;
+				color: var(--ink-dim);
+			}
+			.btn-icon {
+				position: relative;
+				width: 48px;
+				height: 48px;
+				border-radius: 50%;
+				border: 1px solid rgba(255, 255, 255, 0.14);
+				background: linear-gradient(
+							180deg,
+							rgba(255, 255, 255, 0.1),
+							rgba(255, 255, 255, 0) 30%
+						)
+						border-box,
+					rgba(255, 255, 255, 0.08) padding-box;
+				box-shadow: inset 0 1px 1px var(--glass-inner),
+					0 6px 18px rgba(0, 0, 0, 0.28);
+				display: grid;
+				place-items: center;
+				cursor: pointer;
+				transition: transform 260ms cubic-bezier(0.2, 0.9, 0.2, 1.2);
+				backdrop-filter: blur(10px);
+				-webkit-backdrop-filter: blur(10px);
+			}
+			.btn-icon i {
+				font-size: 22px;
+				color: var(--ink);
+				filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+			}
+			.btn-icon:hover {
+				transform: translateY(-3px);
+				border-color: color-mix(
+					in oklab,
+					var(--accent-weak) 65%,
+					var(--glass-border)
+				);
+				box-shadow: inset 0 1px 1px var(--glass-inner),
+					0 10px 26px
+						color-mix(
+							in oklab,
+							var(--accent) 20%,
+							rgba(0, 0, 0, 0.45)
+						);
+			}
+			.btn-icon:active {
+				transform: translateY(0) scale(0.96);
+				box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.28);
+			}
+			.btn {
+				padding: 10px 20px;
+				border-radius: 0.75rem;
+				font-weight: 500;
+				border: 1px solid rgba(255, 255, 255, 0.14);
+				background-color: rgba(255, 255, 255, 0.08);
+				box-shadow: inset 0 1px 1px var(--glass-inner),
+					0 4px 12px rgba(0, 0, 0, 0.2);
+				backdrop-filter: blur(8px);
+				-webkit-backdrop-filter: blur(8px);
+			}
+			.btn-primary {
+				background-color: var(--accent);
+				color: var(--bg);
+				border: none;
+			}
+
+			.loader {
+				width: 28px;
+				height: 28px;
+				border: 4px solid transparent;
+				border-top-color: var(--accent);
+				border-radius: 50%;
+				animation: spin 0.8s linear infinite;
+			}
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+
+			.autocomplete-list {
+				opacity: 0;
+				transform: translateY(-8px);
+				pointer-events: none;
+				transition: opacity 200ms ease-out, transform 200ms ease-out;
+			}
+			.autocomplete-list.visible {
+				opacity: 1;
+				transform: translateY(0);
+				pointer-events: auto;
+			}
+			.autocomplete-item {
+				padding: 12px 16px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				border-radius: 0.5rem;
+			}
+			.autocomplete-item:hover,
+			.autocomplete-active {
+				background-color: rgba(255, 255, 255, 0.05);
+			}
+
+			.modal-overlay {
+				position: fixed;
+				inset: 0;
+				z-index: 50;
+				display: grid;
+				place-items: center;
+				background-color: rgba(0, 0, 0, 0.5);
+				backdrop-filter: blur(8px);
+				opacity: 0;
+				transition: opacity 200ms ease-in-out;
+				pointer-events: none;
+			}
+			.modal-overlay.visible {
+				opacity: 1;
+				pointer-events: auto;
+			}
+
+			.timeline-container {
+				position: relative;
+				padding-left: 2rem;
+			}
+			.timeline-container::before {
+				content: "";
+				position: absolute;
+				left: 0;
+				top: 0.25rem;
+				bottom: 0;
+				width: 1px;
+				background-color: var(--glass-border);
+				-webkit-mask-image: linear-gradient(
+					to bottom,
+					black 80%,
+					transparent 100%
+				);
+				mask-image: linear-gradient(
+					to bottom,
+					black 80%,
+					transparent 100%
+				);
+			}
+			.timeline-item {
+				position: relative;
+				padding-bottom: 2rem;
+			}
+			.timeline-item:last-child {
+				padding-bottom: 0;
+			}
+			.timeline-item::after {
+				content: "";
+				position: absolute;
+				left: calc(-2rem + 0.5px);
+				transform: translateX(-50%);
+				top: 0.25rem;
+				width: 0.75rem;
+				height: 0.75rem;
+				border-radius: 9999px;
+				background-color: var(--glass-border);
+				box-shadow: 0 0 0 4px var(--bg);
+			}
+		</style>
+	</head>
+	<body class="p-4 sm:p-8">
+		<div class="orbs" aria-hidden="true">
+			<div class="orb"></div>
+			<div class="orb"></div>
+		</div>
+
+		<header class="relative w-full max-w-xl mx-auto pt-4 md:pt-8 mb-8">
+			<h1
+				class="text-center text-3xl font-bold flex items-center justify-center gap-3"
+			>
+				<i class="ph-bold ph-compass" style="color: var(--accent)"></i>
+				<span>Star History</span>
+			</h1>
+			<button
+				id="settings-btn"
+				class="btn-icon absolute top-1/2 right-0 transform -translate-y-1/2 z-20"
+				title="Settings"
+			>
+				<i class="ph-bold ph-gear"></i>
+			</button>
+		</header>
+
+		<main class="w-full max-w-xl mx-auto">
+			<div class="relative">
+				<div
+					class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none"
+				>
+					<i
+						class="ph ph-magnifying-glass text-xl"
+						style="color: var(--ink-dim)"
+					></i>
+				</div>
+				<input
+					type="text"
+					id="searchInput"
+					placeholder="Search username..."
+					class="glass-input text-lg"
+					autocomplete="off"
+				/>
+				<div
+					id="clear-search"
+					class="absolute inset-y-0 right-0 pr-3 flex items-center hidden"
+				>
+					<button
+						class="btn-icon w-9 h-9 !shadow-none !bg-transparent"
+						title="Clear search"
+					>
+						<i class="ph-bold ph-x-circle text-xl"></i>
+					</button>
+				</div>
+				<div
+					id="autocomplete-list"
+					class="absolute z-10 w-full mt-2 hidden autocomplete-list p-2"
+					style="
+						background: var(--glass-strong);
+						border-radius: 1rem;
+						border: 1px solid var(--glass-border);
+						backdrop-filter: blur(var(--backdrop-blur));
+						box-shadow: 0 12px 60px var(--glass-shadow);
+					"
+				></div>
+			</div>
+			<div id="history-container" class="mt-4 hidden">
+				<div
+					id="history-pills"
+					class="flex flex-wrap gap-2 justify-center"
+				></div>
+			</div>
+			<div id="loading" class="flex justify-center mt-6 hidden">
+				<div class="loader"></div>
+			</div>
+			<div id="user-profile" class="mt-8"></div>
+		</main>
+
+		<!-- Settings Modal -->
+		<div id="settings-modal" class="modal-overlay">
+			<div class="glass-card w-full max-w-md m-4">
+				<div class="flex justify-between items-center mb-6">
+					<h2 class="text-2xl font-bold">Settings</h2>
+					<button id="close-modal-btn" class="btn-icon w-10 h-10">
+						<i class="ph-bold ph-x"></i>
+					</button>
+				</div>
+				<div>
+					<label for="api-key-input" class="font-medium mb-2 block"
+						>GitHub API Key (PAT)</label
+					>
+					<input
+						type="password"
+						id="api-key-input"
+						placeholder="ghp_..."
+						class="glass-input !py-2 !px-4"
+					/>
+					<p class="text-sm mt-2" style="color: var(--ink-dim)">
+						Your key is stored only in your browser's local storage.
+					</p>
+				</div>
+				<div class="flex justify-end gap-3 mt-6">
+					<button id="clear-key-btn" class="btn">Clear</button>
+					<button id="save-key-btn" class="btn btn-primary">
+						Save & Close
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<button
+			id="goToTopBtn"
+			class="btn-icon fixed bottom-8 right-8 z-30 opacity-0 invisible transform scale-95 transition-all duration-300"
+			title="Go to top"
+		>
+			<i class="ph-bold ph-arrow-up"></i>
+		</button>
+
+		<script>
+			// DOM Elements
+			const searchInput = document.getElementById("searchInput"),
+				userProfile = document.getElementById("user-profile"),
+				loadingIndicator = document.getElementById("loading"),
+				historyContainer = document.getElementById("history-container"),
+				historyPills = document.getElementById("history-pills"),
+				autocompleteList = document.getElementById("autocomplete-list"),
+				clearSearchBtn = document.getElementById("clear-search");
+			const settingsBtn = document.getElementById("settings-btn"),
+				settingsModal = document.getElementById("settings-modal"),
+				closeModalBtn = document.getElementById("close-modal-btn"),
+				apiKeyInput = document.getElementById("api-key-input"),
+				saveKeyBtn = document.getElementById("save-key-btn"),
+				clearKeyBtn = document.getElementById("clear-key-btn");
+			const goToTopBtn = document.getElementById("goToTopBtn");
+
+			// State
+			let searchTimeout,
+				activeSuggestionIndex = -1,
+				isDropdownVisible = false;
+			let currentUsername = "",
+				starredRepoPage = 1;
+			let githubLanguageColors = {};
+			const API_KEY_LS = "github_api_key";
+
+			// --- API & Data Handling ---
+			const getApiKey = () => localStorage.getItem(API_KEY_LS);
+
+			async function githubFetch(url) {
+				const headers = { Accept: "application/vnd.github.v3+json" };
+				const apiKey = getApiKey();
+				if (apiKey) {
+					headers["Authorization"] = `Bearer ${apiKey}`;
+				}
+
+				if (url.includes("/starred")) {
+					headers["Accept"] = "application/vnd.github.star+json";
+				}
+				const response = await fetch(url, { headers });
+
+				if (!response.ok) {
+					if (response.status === 401) {
+						throw new Error(
+							`Authentication failed. Your API key is invalid or has expired. Please check it in Settings.`
+						);
+					}
+					if (response.status === 403) {
+						const resetTime = new Date(
+							response.headers.get("x-ratelimit-reset") * 1000
+						);
+						const minutes = Math.ceil(
+							(resetTime - new Date()) / 60000
+						);
+						throw new Error(
+							`Rate limit exceeded. Try again in ~${minutes} minutes.`
+						);
+					}
+					throw new Error(`API Error (Status: ${response.status})`);
+				}
+				return response.json();
+			}
+
+			async function loadLanguageColors() {
+				try {
+					const r = await fetch(
+						"https://cdn.jsdelivr.net/gh/ozh/github-colors@refs/heads/master/colors.json"
+					);
+					if (!r.ok) throw new Error();
+					githubLanguageColors = await r.json();
+				} catch (e) {
+					console.error("Failed to load language colors");
+				}
+			}
+			const getLanguageColor = (lang) =>
+				lang && githubLanguageColors[lang]
+					? githubLanguageColors[lang].color
+					: "#64748b";
+
+			// --- History Management ---
+			const HISTORY_KEY = "githubUserHistory",
+				MAX_HISTORY_SIZE = 6;
+			const getHistory = () =>
+				JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+			const saveHistory = (h) =>
+				localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+			const addToHistory = (u) => {
+				let h = getHistory().filter(
+					(i) => i.login.toLowerCase() !== u.login.toLowerCase()
+				);
+				h.unshift(u);
+				saveHistory(h.slice(0, MAX_HISTORY_SIZE));
+				renderHistoryPills();
+			};
+			const removeFromHistory = (u) => {
+				let h = getHistory().filter(
+					(i) => i.login.toLowerCase() !== u.toLowerCase()
+				);
+				saveHistory(h);
+				renderHistoryPills();
+			};
+			const renderHistoryPills = () => {
+				const h = getHistory();
+				historyContainer.classList.toggle("hidden", h.length === 0);
+				historyPills.innerHTML = h
+					.map(
+						(u) =>
+							`<button class="glass-pill" data-username="${u.login}"><img class="w-6 h-6 rounded-full mr-2" src="${u.avatar_url}" alt="${u.login}"><span>${u.login}</span><span class="remove-pill" data-username="${u.login}"><i class="ph ph-x"></i></span></button>`
+					)
+					.join("");
+			};
+
+			const debounce =
+				(f, d = 350) =>
+				(...a) => {
+					clearTimeout(searchTimeout);
+					if (searchInput.value) {
+						loadingIndicator.classList.remove("hidden");
+						userProfile.innerHTML = "";
+					} else {
+						loadingIndicator.classList.add("hidden");
+					}
+					searchTimeout = setTimeout(() => f(...a), d);
+				};
+
+			// --- UI Logic ---
+			const showAutocomplete = () => {
+				if (autocompleteList.innerHTML.trim()) {
+					isDropdownVisible = true;
+					autocompleteList.classList.remove("hidden");
+					requestAnimationFrame(() =>
+						autocompleteList.classList.add("visible")
+					);
+				}
+			};
+			const hideAutocomplete = () => {
+				isDropdownVisible = false;
+				autocompleteList.classList.remove("visible");
+				setTimeout(() => autocompleteList.classList.add("hidden"), 200);
+			};
+			const showSettingsModal = () => {
+				apiKeyInput.value = getApiKey() || "";
+				settingsModal.classList.add("visible");
+			};
+			const hideSettingsModal = () => {
+				settingsModal.classList.remove("visible");
+			};
+			const toggleClearButton = () => {
+				clearSearchBtn.classList.toggle(
+					"hidden",
+					searchInput.value.length === 0
+				);
+			};
+
+			async function searchUsers(query) {
+				if (!query) {
+					hideAutocomplete();
+					loadingIndicator.classList.add("hidden");
+					return;
+				}
+				try {
+					const data = await githubFetch(
+						`https://api.github.com/search/users?q=${query}+in:login&per_page=5`
+					);
+					displayAutocomplete(data);
+				} catch (e) {
+					autocompleteList.innerHTML = `<div class="p-3 text-orange-400 font-medium text-center">${e.message}</div>`;
+					showAutocomplete();
+				} finally {
+					loadingIndicator.classList.add("hidden");
+				}
+			}
+
+			function displayAutocomplete(data) {
+				activeSuggestionIndex = -1;
+				if (!data.items || data.items.length === 0) {
+					hideAutocomplete();
+					autocompleteList.innerHTML = "";
+					return;
+				}
+				autocompleteList.innerHTML = data.items
+					.map(
+						(u) =>
+							`<div class="autocomplete-item" data-username="${u.login}"><img src="${u.avatar_url}" alt="${u.login}" class="w-8 h-8 rounded-full mr-4"><span class="font-medium">${u.login}</span></div>`
+					)
+					.join("");
+				showAutocomplete();
+			}
+
+			async function selectUser(username) {
+				searchInput.value = username;
+				toggleClearButton();
+				hideAutocomplete();
+				userProfile.innerHTML = "";
+				loadingIndicator.classList.remove("hidden");
+				currentUsername = username;
+				starredRepoPage = 1;
+				try {
+					const userData = await githubFetch(
+						`https://api.github.com/users/${username}`
+					);
+					displayUserProfile(userData);
+					addToHistory({
+						login: userData.login,
+						avatar_url: userData.avatar_url,
+					});
+					fetchAndDisplayStarredTimeline(username, starredRepoPage);
+				} catch (e) {
+					userProfile.innerHTML = `<div class="glass-card text-center text-orange-400">${e.message}</div>`;
+				} finally {
+					loadingIndicator.classList.add("hidden");
+				}
+			}
+
+			function displayUserProfile(user) {
+				const profileHTML = `<div class="glass-card">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left">
+                    <img src="${user.avatar_url}" alt="${
+					user.login
+				}" class="w-28 h-28 rounded-full border-4 shadow-lg" style="border-color: var(--glass-border);">
+                    <div class="sm:ml-8 mt-4 sm:mt-0 flex-grow">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div><h2 class="text-3xl font-bold">${
+								user.name || user.login
+							}</h2><span class="text-lg" style="color:var(--ink-dim)">@${
+					user.login
+				}</span></div>
+                            <a href="${
+								user.html_url
+							}" target="_blank" rel="noopener noreferrer" title="View on GitHub" class="btn-icon mt-3 sm:mt-0 self-center sm:self-auto"><i class="ph-bold ph-github-logo"></i></a>
+                        </div>
+                        <p class="mt-3" style="color:var(--ink-dim)">${
+							user.bio || "This user has no bio."
+						}</p>
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start mt-4 gap-x-4 gap-y-2" style="color:var(--ink-dim)">${
+							user.location
+								? `<div class="flex items-center gap-2"><i class="ph ph-map-pin"></i><span>${user.location}</span></div>`
+								: ""
+						}${
+					user.blog
+						? `<div class="flex items-center gap-2"><i class="ph ph-link"></i><a href="${
+								user.blog.startsWith("http")
+									? user.blog
+									: "//" + user.blog
+						  }" target="_blank" class="hover:text-[var(--accent)] transition-colors truncate max-w-[200px]">${
+								user.blog
+						  }</a></div>`
+						: ""
+				}</div>
+                    </div>
+                </div>
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center p-4 rounded-xl" style="background: rgba(0,0,0,0.2)">
+                    <div class="flex items-center justify-center gap-2"><i class="ph ph-users text-lg" style="color:var(--accent)"></i><div><p class="text-2xl font-bold">${user.followers.toLocaleString()}</p><p class="text-sm" style="color:var(--ink-dim)">Followers</p></div></div>
+                    <div class="flex items-center justify-center gap-2"><i class="ph ph-user-plus text-lg" style="color:var(--accent)"></i><div><p class="text-2xl font-bold">${user.following.toLocaleString()}</p><p class="text-sm" style="color:var(--ink-dim)">Following</p></div></div>
+                    <div class="flex items-center justify-center gap-2"><i class="ph ph-books text-lg" style="color:var(--accent)"></i><div><p class="text-2xl font-bold">${user.public_repos.toLocaleString()}</p><p class="text-sm" style="color:var(--ink-dim)">Repositories</p></div></div>
+                </div>
+                <div id="starred-timeline-container" class="mt-6 pt-6 border-t" style="border-color:var(--glass-border)"></div>
+            </div>`;
+				userProfile.innerHTML = profileHTML;
+			}
+
+			async function fetchAndDisplayStarredTimeline(username, page) {
+				const container = document.getElementById(
+					"starred-timeline-container"
+				);
+				const loadMoreContainerId = "load-more-container",
+					perPage = 15;
+				if (page === 1)
+					container.innerHTML = `<div class="flex justify-center p-4"><div class="loader"></div></div>`;
+				else {
+					document.getElementById(loadMoreContainerId)?.remove();
+					container.insertAdjacentHTML(
+						"beforeend",
+						`<div class="flex justify-center p-4"><div class="loader"></div></div>`
+					);
+				}
+				try {
+					const starredRepos = await githubFetch(
+						`https://api.github.com/users/${username}/starred?per_page=${perPage}&page=${page}&sort=created&direction=desc`
+					);
+					if (page > 1) {
+						container
+							.querySelector(".loader")
+							.parentElement.remove();
+					}
+					if (page === 1 && starredRepos.length === 0) {
+						container.innerHTML = `<p class="text-center" style="color:var(--ink-dim)">This user hasn't starred any public repositories yet.</p>`;
+						return;
+					}
+					const groupedByDay = starredRepos.reduce(
+						(acc, repoData) => {
+							if (repoData.repo) {
+								const date = new Date(
+									repoData.starred_at
+								).toLocaleDateString("en-US", {
+									year: "numeric",
+									month: "long",
+									day: "numeric",
+								});
+								if (!acc[date]) acc[date] = [];
+								acc[date].push(repoData.repo);
+							}
+							return acc;
+						},
+						{}
+					);
+
+					const timelineItemsHTML = Object.entries(groupedByDay)
+						.map(
+							([date, repos]) => `<div class="timeline-item">
+                    <time class="mb-2 block text-sm font-semibold" style="color:var(--ink-dim)">${date}</time>
+                    <div class="space-y-3">
+                        ${repos
+							.map(
+								(r) => `<a href="${
+									r.html_url
+								}" target="_blank" rel="noopener noreferrer" class="block p-4 rounded-lg border transition-all hover:border-[var(--glass-border)] hover:bg-[rgba(0,0,0,0.1)]" style="background:rgba(0,0,0,0.2); border-color:transparent;">
+                            <div class="flex items-center font-medium"><i class="ph ph-book-bookmark mr-3" style="color:var(--ink-dim)"></i><span class="text-[var(--accent)]">${
+								r.owner.login
+							}</span><span class="mx-1">/</span><span class="font-bold">${
+									r.name
+								}</span></div>
+                            <p class="mt-2 text-sm" style="color:var(--ink-dim)">${
+								r.description || "No description provided."
+							}</p>
+                            ${
+								r.topics && r.topics.length > 0
+									? `<div class="mt-3 flex flex-wrap gap-2">${r.topics
+											.map(
+												(topic) =>
+													`<span class="text-xs font-medium px-2 py-1 rounded-full" style="background:color-mix(in oklab, var(--accent) 15%, transparent); color:var(--accent-weak)">${topic}</span>`
+											)
+											.join("")}</div>`
+									: ""
+							}
+                            <div class="flex items-center flex-wrap text-sm mt-3 gap-x-6 gap-y-2" style="color:var(--ink-dim)">
+                                ${
+									r.language
+										? `<div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background-color: ${getLanguageColor(
+												r.language
+										  )};"></span>${r.language}</div>`
+										: ""
+								}
+                                <div class="flex items-center gap-1.5"><i class="ph ph-star"></i>${r.stargazers_count.toLocaleString()}</div>
+                                <div class="flex items-center gap-1.5"><i class="ph ph-git-branch"></i>${r.forks_count.toLocaleString()}</div>
+                            </div>
+                        </a>`
+							)
+							.join("")}
+                    </div>
+                </div>`
+						)
+						.join("");
+
+					if (page === 1) {
+						container.innerHTML = `<h3 class="text-xl font-bold text-center mb-6">Recent Star Activity</h3><div id="timeline-body" class="timeline-container">${timelineItemsHTML}</div>`;
+					} else {
+						document
+							.getElementById("timeline-body")
+							?.insertAdjacentHTML(
+								"beforeend",
+								timelineItemsHTML
+							);
+					}
+
+					if (starredRepos.length === perPage) {
+						container.insertAdjacentHTML(
+							"beforeend",
+							`<div id="${loadMoreContainerId}" class="flex justify-center pt-4"><button id="load-more-starred" title="Load More" class="btn-icon"><i class="ph-bold ph-arrow-down"></i></button></div>`
+						);
+					}
+				} catch (e) {
+					container.innerHTML = `<p class="text-center text-orange-400 p-4">${e.message}</p>`;
+				}
+			}
+
+			// --- Event Listeners ---
+			const debouncedSearch = debounce(searchUsers);
+			searchInput.addEventListener("input", () => {
+				debouncedSearch(searchInput.value);
+				toggleClearButton();
+			});
+			clearSearchBtn.addEventListener("click", () => {
+				searchInput.value = "";
+				toggleClearButton();
+				hideAutocomplete();
+				userProfile.innerHTML = "";
+				loadingIndicator.classList.add("hidden");
+				searchInput.focus();
+			});
+			autocompleteList.addEventListener("click", (e) => {
+				const item = e.target.closest(".autocomplete-item");
+				if (item) selectUser(item.dataset.username);
+			});
+			historyPills.addEventListener("click", (e) => {
+				const removeBtn = e.target.closest(".remove-pill");
+				if (removeBtn) {
+					e.stopPropagation();
+					removeFromHistory(removeBtn.dataset.username);
+					return;
+				}
+				const pill = e.target.closest(".glass-pill");
+				if (pill) {
+					selectUser(pill.dataset.username);
+				}
+			});
+			userProfile.addEventListener("click", (e) => {
+				const btn = e.target.closest("#load-more-starred");
+				if (btn) {
+					starredRepoPage++;
+					fetchAndDisplayStarredTimeline(
+						currentUsername,
+						starredRepoPage
+					);
+				}
+			});
+			document.addEventListener("click", (e) => {
+				if (
+					!searchInput.contains(e.target) &&
+					!autocompleteList.contains(e.target)
+				)
+					hideAutocomplete();
+			});
+
+			searchInput.addEventListener("keydown", (e) => {
+				if (!isDropdownVisible) return;
+				const items =
+					autocompleteList.querySelectorAll(".autocomplete-item");
+				if (items.length === 0) return;
+
+				if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+					e.preventDefault();
+					items[activeSuggestionIndex]?.classList.remove(
+						"autocomplete-active"
+					);
+					if (e.key === "ArrowDown")
+						activeSuggestionIndex =
+							(activeSuggestionIndex + 1) % items.length;
+					else
+						activeSuggestionIndex =
+							(activeSuggestionIndex - 1 + items.length) %
+							items.length;
+					items[activeSuggestionIndex].classList.add(
+						"autocomplete-active"
+					);
+					items[activeSuggestionIndex].scrollIntoView({
+						block: "nearest",
+					});
+				} else if (e.key === "Enter") {
+					e.preventDefault();
+					if (activeSuggestionIndex > -1)
+						items[activeSuggestionIndex].click();
+					else items[0].click();
+				} else if (e.key === "Escape") hideAutocomplete();
+			});
+
+			// Settings Modal Listeners
+			settingsBtn.addEventListener("click", showSettingsModal);
+			closeModalBtn.addEventListener("click", hideSettingsModal);
+			settingsModal.addEventListener("click", (e) => {
+				if (e.target === settingsModal) hideSettingsModal();
+			});
+			saveKeyBtn.addEventListener("click", () => {
+				const key = apiKeyInput.value.trim();
+				if (key) localStorage.setItem(API_KEY_LS, key);
+				else localStorage.removeItem(API_KEY_LS);
+				hideSettingsModal();
+			});
+			clearKeyBtn.addEventListener("click", () => {
+				apiKeyInput.value = "";
+				localStorage.removeItem(API_KEY_LS);
+			});
+
+			window.addEventListener("scroll", () => {
+				if (window.scrollY > 400) {
+					goToTopBtn.classList.remove(
+						"opacity-0",
+						"invisible",
+						"scale-95"
+					);
+				} else {
+					goToTopBtn.classList.add(
+						"opacity-0",
+						"invisible",
+						"scale-95"
+					);
+				}
+			});
+			goToTopBtn.addEventListener("click", () => {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			});
+
+			// --- Init ---
+			document.addEventListener("DOMContentLoaded", () => {
+				loadLanguageColors();
+				renderHistoryPills();
+			});
+		</script>
+	</body>
+</html>
